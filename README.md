@@ -63,50 +63,6 @@ University students and club treasurers frequently handle physical supermarket r
 
 ---
 
-## 🏗️ System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Presentation ["Presentation Layer (Flutter UI & CustomPainter)"]
-        UI_Dash[HomeDashboardScreen]
-        UI_Scan[ScannerScreen]
-        UI_Viewfinder[CameraViewfinder + Framing Overlay]
-        UI_Review[ReviewVerificationScreen (Raw Bounding & Verification)]
-        UI_Analytics[AnalyticsScreen]
-        UI_History[ReceiptHistoryScreen & ReceiptDetailScreen]
-        
-        Painter_Donut[AnimatedDonutChart (CustomPainter)]
-        Painter_Bar[AnimatedBarChart (CustomPainter)]
-    end
-
-    subgraph Domain ["Domain & Services Layer"]
-        Service_OCR[OcrService (Google ML Kit)]
-        Service_Regex[ReceiptRegexParser (Multi-Pass Heuristics)]
-        Service_Storage[StorageService (Thumbnail Cache)]
-        Models[Models: Receipt, ReceiptItem, ExpenseCategory, OcrScanResult]
-    end
-
-    subgraph Data ["Data Layer (Local SQLite)"]
-        DB_Helper[DatabaseHelper (sqflite singleton)]
-        Table_Receipts[(Table: receipts)]
-        Table_Items[(Table: receipt_items)]
-    end
-
-    UI_Scan --> UI_Viewfinder
-    UI_Viewfinder --> Service_OCR
-    Service_OCR --> Service_Regex
-    Service_Regex --> UI_Review
-    UI_Review --> DB_Helper
-    UI_Review --> Service_Storage
-    DB_Helper --> Table_Receipts
-    DB_Helper --> Table_Items
-    Table_Receipts -.-> UI_Dash
-    Table_Receipts -.-> UI_Analytics
-    UI_Analytics --> Painter_Donut
-    UI_Analytics --> Painter_Bar
-```
-
----
 
 ## 🧠 Regex Heuristic Parser Engine (`lib/services/regex_parser.dart`)
 
@@ -186,52 +142,6 @@ CREATE INDEX idx_receipts_date ON receipts (date);
 CREATE INDEX idx_receipts_category ON receipts (category_id);
 ```
 
----
-
-## 🧪 Testing & Verification
-
-The project includes an automated test suite verifying all parser edge-cases, CustomPainter mathematics, and database serialization:
-
-```bash
-dart run test/run_all_tests.dart
-```
-
-### Test Suite Execution Output:
-```
-===============================================================
-     OCR EXPENSE TRACKER - COMPREHENSIVE TEST SUITE            
-===============================================================
-
-[1/3] REGEX HEURISTIC PARSER & NOISY RECEIPT OCR TESTS
-  ✓ PASS: Highlands Coffee Vietnamese Receipt (94.000 ₫)
-  ✓ PASS: Circle K Minimart Receipt (25.000 ₫)
-  ✓ PASS: Fahasa Bookstore Receipt (177.000 ₫)
-  ✓ PASS: Grab Commute Receipt (78.000 ₫)
-  ✓ PASS: International USD Starbucks Receipt ($10.53)
-  ✓ PASS: Noisy Receipt with Unknown Merchant and Text Date
-  ✓ PASS: Receipt with Phone Number and Tax Code (MST) Ignored
-  ✓ PASS: Receipt with "k" suffix in amount (45k -> 45.000 ₫)
-  ✓ PASS: CGV Cinema Ticket Receipt (Entertainment)
-
-[2/3] CUSTOMPAINTER GEOMETRY & TOUCH INTERACTION TESTS
-  ✓ PASS: Donut Chart Sweep Angle Sums to 2*PI
-  ✓ PASS: Donut Slice Exploding Bisector Vector (8px magnitude)
-  ✓ PASS: Bar Chart Nice Max Dynamic Scale Calculation
-  ✓ PASS: Bar Chart Hit-Testing Slot Mapping
-
-[3/3] DATABASE MODELS & CURRENCY SERIALIZATION TESTS
-  ✓ PASS: Receipt Item toMap and fromMap serialization
-  ✓ PASS: Receipt toMap and fromMap serialization
-  ✓ PASS: Vietnamese VND Integer Currency Formatting
-  ✓ PASS: USD Decimal Currency Formatting
-  ✓ PASS: Expense Category Keywords Auto-Detection
-
-===============================================================
-  🎉 ALL 18 SUITE TESTS PASSED WITH 100% SUCCESS RATE!        
-===============================================================
-```
-
----
 
 ## 🚀 How to Run Locally
 
