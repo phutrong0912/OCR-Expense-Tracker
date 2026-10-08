@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR Expense Tracker - Interactive Live Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #10b981;
+      --background: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --food: #ef4444;
+      --study: #3b82f6;
+      --travel: #f59e0b;
+      --gear: #8b5cf6;
+      --entertainment: #ec4899;
+      --groceries: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .device-container {
+      width: 100%;
+      max-width: 430px;
+      height: 880px;
+      background: var(--surface);
+      border-radius: 44px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6), 0 0 0 12px #1e293b;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .status-bar {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 50;
+    }
+    .status-bar .notch {
+      width: 120px;
+      height: 24px;
+      background: #0f172a;
+      border-radius: 12px;
+    }
+
+    .app-screen {
+      flex: 1;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      background: var(--background);
+    }
+    .app-screen.active { display: flex; }
+
+    .app-bar {
+      padding: 12px 20px;
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Dashboard Widgets */
+    .dashboard-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 90px;
+    }
+    .card-balance {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb, #3b82f6);
+      border-radius: 20px;
+      padding: 20px;
+      color: white;
+      box-shadow: 0 10px 25px -5px rgba(37,99,235,0.4);
+    }
+    .balance-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      opacity: 0.9;
+    }
+    .badge-ai {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 8px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+    }
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 12px 0 16px 0;
+    }
+    .balance-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-quick {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-quick-primary { background: white; color: #1e3a8a; }
+    .btn-quick-secondary { background: rgba(255,255,255,0.15); color: white; }
+
+    .section-card {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .section-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Custom Canvas Chart Container */
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 200px;
+    }
+    canvas { width: 100%; height: 100%; }
+
+    /* Receipt List Item */
+    .receipt-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .receipt-item:hover { transform: translateY(-2px); }
+    .receipt-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+    }
+    .receipt-info { flex: 1; }
+    .receipt-store { font-weight: 700; font-size: 14px; }
+    .receipt-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .receipt-price { font-weight: 700; font-size: 14px; color: var(--primary-dark); }
+
+    /* Camera Viewfinder Screen */
+    .viewfinder-screen {
+      background: #000;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      color: white;
+    }
+    .viewfinder-top {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+    .viewfinder-overlay {
+      position: absolute;
+      top: 90px;
+      left: 24px;
+      right: 24px;
+      bottom: 180px;
+      border: 2px dashed rgba(96,165,250,0.6);
+      border-radius: 20px;
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
+    }
+    .crop-corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: #60a5fa;
+      border-style: solid;
+    }
+    .tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 18px; }
+    .tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 18px; }
+    .bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 18px; }
+    .br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 18px; }
+
+    .viewfinder-bottom {
+      padding: 24px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10;
+    }
+    .btn-shutter {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      border: 4px solid white;
+      padding: 4px;
+      cursor: pointer;
+      background: transparent;
+    }
+    .btn-shutter-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
+      font-size: 28px;
+    }
+
+    /* Review & Verification Screen */
+    .review-tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .review-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .review-tab.active {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-input-lg {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .confidence-badge {
+      padding: 10px;
+      border-radius: 10px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    /* Floating Scan Button */
+    .fab-scan {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: var(--primary);
+      color: white;
+      padding: 14px 22px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      box-shadow: 0 10px 25px -5px rgba(37,99,235,0.6);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 40;
+    }
+
+    /* Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 30;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* Modal Sheet for Samples */
+    .sheet-backdrop {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+    }
+    .sheet-backdrop.active { display: flex; }
+    .sheet-card {
+      background: white;
+      width: 100%;
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .sheet-item {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sheet-item:hover { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+<div class="device-container">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="notch"></div>
+    <span>5G 100%</span>
+  </div>
+
+  <!-- Screen 1: Dashboard -->
+  <div class="app-screen active" id="screen-dashboard">
+    <div class="app-bar">
+      <div class="app-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
+        OCR Expense Tracker
+      </div>
+      <div>
+        <button onclick="switchScreen('screen-analytics')" style="background:none;border:none;cursor:pointer;padding:6px;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- Executive Balance Card -->
+      <div class="card-balance">
+        <div class="balance-header">
+          <span>THIS MONTH'S EXPENSES</span>
+          <div class="badge-ai">
+            <span>⚡ Sub-100ms On-Device AI</span>
+          </div>
+        </div>
+        <div class="balance-amount" id="dash-total">884.000 ₫</div>
+        <div class="balance-actions">
+          <button class="btn-quick btn-quick-primary" onclick="switchScreen('screen-viewfinder')">
+            📷 Quick Scan
+          </button>
+          <button class="btn-quick btn-quick-secondary" onclick="switchScreen('screen-analytics')">
+            📊 Analytics
+          </button>
+        </div>
+      </div>
+
+      <!-- Weekly Canvas Bar Chart -->
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Weekly Spending Trend</div>
+            <div class="section-subtitle">Pure Canvas CustomPainter with average line</div>
+          </div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="weeklyBarCanvas" width="380" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Verified Receipts -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Recent Verified Receipts</div>
+          <span style="font-size:12px;color:#2563eb;font-weight:600;cursor:pointer;" onclick="switchScreen('screen-history')">See All</span>
+        </div>
+        <div id="recent-receipts-list"></div>
+      </div>
+    </div>
+
+    <button class="fab-scan" onclick="switchScreen('screen-viewfinder')">
+      📷 Scan Receipt
+    </button>
+  </div>
+
+  <!-- Screen 2: Viewfinder & Camera -->
+  <div class="app-screen" id="screen-viewfinder">
+    <div class="viewfinder-screen">
+      <div class="viewfinder-top">
+        <button onclick="switchScreen('screen-dashboard')" style="background:none;border:none;color:white;cursor:pointer;font-size:18px;">✕</button>
+        <span style="background:rgba(0,0,0,0.5);padding:4px 12px;border-radius:20px;font-size:12px;">Auto-Framing Overlay Active</span>
+        <button style="background:none;border:none;color:amber;cursor:pointer;">⚡</button>
+      </div>
+
+      <!-- Framing Overlay -->
+      <div class="viewfinder-overlay">
+        <div class="crop-corner tl"></div>
+        <div class="crop-corner tr"></div>
+        <div class="crop-corner bl"></div>
+        <div class="crop-corner br"></div>
+        <div style="position:absolute;top:40%;left:0;right:0;text-align:center;color:rgba(255,255,255,0.7);font-size:13px;">
+          Align Receipt inside guidelines
+        </div>
+      </div>
+
+      <div class="viewfinder-bottom">
+        <button onclick="document.getElementById('file-input').click()" style="background:none;border:none;color:white;cursor:pointer;font-size:24px;">🖼️</button>
+        <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(event)">
+        
+        <button class="btn-shutter" onclick="triggerSampleSheet()">
+          <div class="btn-shutter-inner">📷</div>
+        </button>
+
+        <button onclick="triggerSampleSheet()" style="background:none;border:none;color:white;cursor:pointer;font-size:24px;">📋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Review & Verification Screen (Mandatory Key Requirement) -->
+  <div class="app-screen" id="screen-review">
+    <div class="app-bar">
+      <div class="app-title">
+        <button onclick="switchScreen('screen-viewfinder')" style="background:none;border:none;cursor:pointer;margin-right:8px;">←</button>
+        Review & Verification
+      </div>
+    </div>
+
+    <div class="review-tabs">
+      <div class="review-tab active" id="tab-btn-fields" onclick="switchReviewTab('fields')">Verify Fields</div>
+      <div class="review-tab" id="tab-btn-raw" onclick="switchReviewTab('raw')">Raw OCR & Bounding</div>
+    </div>
+
+    <div class="dashboard-content" id="review-tab-fields">
+      <div class="confidence-badge">
+        <span>⚡ On-Device OCR Latency: <strong>38 ms</strong></span>
+        <span>Confidence: <strong id="rev-conf">95% High</strong></span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Merchant / Store Name</label>
+        <input class="form-input" id="inp-merchant" value="Highlands Coffee">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Total Monetary Amount</label>
+        <input class="form-input form-input-lg" id="inp-amount" value="94.000 ₫">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Transaction Date & Time</label>
+        <input class="form-input" id="inp-date" value="08/10/2026 14:15">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Detected Category</label>
+        <select class="form-input" id="inp-category">
+          <option value="food">Food & Dining</option>
+          <option value="groceries">Groceries & Market</option>
+          <option value="study">Study & Books</option>
+          <option value="travel">Travel & Commute</option>
+          <option value="gear">Gear & Tech</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="other">General / Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Itemized Lines</label>
+        <div id="rev-items" style="font-size:13px;background:white;padding:12px;border-radius:10px;border:1px solid var(--border)">
+          1 Phin Sữa Đá L (39.000 ₫)<br>
+          1 Trà Sen Vàng L (55.000 ₫)
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button class="btn-quick" style="background:#e2e8f0;color:#334155" onclick="switchScreen('screen-dashboard')">Discard</button>
+        <button class="btn-quick" style="background:#2563eb;color:white;flex:2;" onclick="saveVerifiedReceipt()">Confirm & Save to SQLite</button>
+      </div>
+    </div>
+
+    <div class="dashboard-content" id="review-tab-raw" style="display:none;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+        Inspect spatial OCR lines and bounding coordinates extracted sub-100ms on-device:
+      </div>
+      <div id="raw-lines-container"></div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Analytics Screen (CustomPainter Donut & Bar Visualizations) -->
+  <div class="app-screen" id="screen-analytics">
+    <div class="app-bar">
+      <div class="app-title">
+        <button onclick="switchScreen('screen-dashboard')" style="background:none;border:none;cursor:pointer;margin-right:8px;">←</button>
+        Spending Analytics
+      </div>
+    </div>
+
+    <div class="dashboard-content">
+      <!-- Donut Chart -->
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Category Distribution</div>
+            <div class="section-subtitle">Pure Canvas Donut Chart with touch explosion</div>
+          </div>
+        </div>
+        <div class="canvas-container" style="height:240px;">
+          <canvas id="categoryDonutCanvas" width="380" height="240"></canvas>
+        </div>
+        <div id="donut-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center;"></div>
+      </div>
+
+      <!-- Weekly Trend Bar Chart -->
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Weekly Daily Spending</div>
+            <div class="section-subtitle">CustomPainter scale & reference average</div>
+          </div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="analyticsBarCanvas" width="380" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="switchScreen('screen-dashboard')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Home
+    </button>
+    <button class="nav-btn" onclick="switchScreen('screen-viewfinder')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Scan
+    </button>
+    <button class="nav-btn" onclick="switchScreen('screen-analytics')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      Analytics
+    </button>
+  </div>
+
+  <!-- Sample Presets Sheet -->
+  <div class="sheet-backdrop" id="sample-sheet" onclick="this.classList.remove('active')">
+    <div class="sheet-card" onclick="event.stopPropagation()">
+      <div style="font-weight:700;font-size:16px;margin-bottom:14px;">Select Sample Receipt for Demo</div>
+      
+      <div class="sheet-item" onclick="loadPreset('highlands')">
+        <div>
+          <strong>Highlands Coffee</strong><br>
+          <span style="font-size:12px;color:#64748b">94.000 ₫ • Food & Dining</span>
+        </div>
+        <span>☕</span>
+      </div>
+
+      <div class="sheet-item" onclick="loadPreset('circlek')">
+        <div>
+          <strong>Circle K Minimart</strong><br>
+          <span style="font-size:12px;color:#64748b">25.000 ₫ • Groceries</span>
+        </div>
+        <span>🛒</span>
+      </div>
+
+      <div class="sheet-item" onclick="loadPreset('fahasa')">
+        <div>
+          <strong>Fahasa Bookstore</strong><br>
+          <span style="font-size:12px;color:#64748b">177.000 ₫ • Study & Books</span>
+        </div>
+        <span>📚</span>
+      </div>
+
+      <div class="sheet-item" onclick="loadPreset('grab')">
+        <div>
+          <strong>GrabCar Ride</strong><br>
+          <span style="font-size:12px;color:#64748b">78.000 ₫ • Travel</span>
+        </div>
+        <span>🚗</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initial SQLite/In-memory database records
+  let receipts = [
+    { id: 1, merchant: 'Highlands Coffee', amount: 94000, date: '08/10/2026', cat: 'food', icon: '☕', color: '#ef4444' },
+    { id: 2, merchant: 'Circle K', amount: 42000, date: '07/10/2026', cat: 'groceries', icon: '🛒', color: '#10b981' },
+    { id: 3, merchant: 'Fahasa Bookstore', amount: 185000, date: '06/10/2026', cat: 'study', icon: '📚', color: '#3b82f6' },
+    { id: 4, merchant: 'GrabCar', amount: 78000, date: '05/10/2026', cat: 'travel', icon: '🚗', color: '#f59e0b' },
+    { id: 5, merchant: 'CGV Cinemas', amount: 220000, date: '04/10/2026', cat: 'entertainment', icon: '🎬', color: '#ec4899' },
+    { id: 6, merchant: 'Thế Giới Di Động', amount: 250000, date: '03/10/2026', cat: 'gear', icon: '💻', color: '#8b5cf6' },
+  ];
+
+  const presets = {
+    highlands: {
+      merchant: 'Highlands Coffee',
+      amount: '94.000 ₫',
+      rawAmount: 94000,
+      date: '08/10/2026 14:15',
+      cat: 'food',
+      items: '1 Phin Sữa Đá L (39.000 ₫)<br>1 Trà Sen Vàng L (55.000 ₫)',
+      raw: ['HIGHLANDS COFFEE', 'Đ/C: 135 Hai Bà Trưng, Q.1', 'Ngày: 08/10/2026 14:15', '1 Phin Sữa Đá L 39.000', '1 Trà Sen Vàng L 55.000', 'Cộng tiền hàng: 94.000', 'TỔNG CỘNG: 94.000 đ', 'Tiền khách đưa: 100.000', 'Tiền thối lại: 6.000']
+    },
+    circlek: {
+      merchant: 'Circle K Vietnam',
+      amount: '25.000 ₫',
+      rawAmount: 25000,
+      date: '08/10/2026 13:45',
+      cat: 'groceries',
+      items: 'Bánh mì que Pate (15.000 ₫)<br>Nước suối Aquafina (10.000 ₫)',
+      raw: ['CIRCLE K VIETNAM', 'MST: 0305882190', '08-10-2026 13:45', 'Bánh mì que 15.000', 'Nước suối Aquafina 10.000', 'Tổng tiền: 25.000 VND', 'Khách đưa: 50.000']
+    },
+    fahasa: {
+      merchant: 'Nhà Sách Fahasa',
+      amount: '177.000 ₫',
+      rawAmount: 177000,
+      date: '15/09/2026 10:20',
+      cat: 'study',
+      items: 'Vở kẻ ngang 5 quyển (45.000 ₫)<br>Bút bi Thiên Long 2 cây (12.000 ₫)<br>Sách Flutter (120.000 ₫)',
+      raw: ['NHÀ SÁCH FAHASA', 'Chi nhánh Tân Định', 'Ngày 15/09/2026', 'Vở kẻ ngang 5 quyển 45.000', 'Bút bi Thiên Long 2 cây 12.000', 'Sách Giáo trình Flutter 120.000', 'THANH TOÁN: 177,000 đ']
+    },
+    grab: {
+      merchant: 'GrabCar Vietnam',
+      amount: '78.000 ₫',
+      rawAmount: 78000,
+      date: '01/10/2026 18:30',
+      cat: 'travel',
+      items: 'GrabCar ride (68.000 ₫)<br>Phí cầu đường (10.000 ₫)',
+      raw: ['GRAB VIETNAM', 'Chuyến đi GrabCar', 'Ngày 01/10/2026 18:30', 'Cước phí: 68.000 VND', 'Phí cầu đường: 10.000', 'Tổng thanh toán: 78.000 đ']
+    }
+  };
+
+  function switchScreen(screenId) {
+    document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    if (screenId === 'screen-dashboard' || screenId === 'screen-analytics') {
+      renderDashboard();
+      renderCharts();
+    }
+  }
+
+  function triggerSampleSheet() {
+    document.getElementById('sample-sheet').classList.add('active');
+  }
+
+  function loadPreset(key) {
+    document.getElementById('sample-sheet').classList.remove('active');
+    const p = presets[key];
+    document.getElementById('inp-merchant').value = p.merchant;
+    document.getElementById('inp-amount').value = p.amount;
+    document.getElementById('inp-date').value = p.date;
+    document.getElementById('inp-category').value = p.cat;
+    document.getElementById('rev-items').innerHTML = p.items;
+
+    const rawContainer = document.getElementById('raw-lines-container');
+    rawContainer.innerHTML = p.raw.map((line, idx) => `
+      <div style="background:white;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1px solid #e2e8f0;font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;justify-content:space-between;">
+        <span><strong>${idx+1}.</strong> ${line}</span>
+        <span style="color:#64748b;font-size:10px">conf: 0.94</span>
+      </div>
+    `).join('');
+
+    switchScreen('screen-review');
+  }
+
+  function switchReviewTab(tab) {
+    document.getElementById('tab-btn-fields').classList.toggle('active', tab === 'fields');
+    document.getElementById('tab-btn-raw').classList.toggle('active', tab === 'raw');
+    document.getElementById('review-tab-fields').style.display = tab === 'fields' ? 'flex' : 'none';
+    document.getElementById('review-tab-raw').style.display = tab === 'raw' ? 'flex' : 'none';
+  }
+
+  function saveVerifiedReceipt() {
+    const merchant = document.getElementById('inp-merchant').value;
+    const amountStr = document.getElementById('inp-amount').value.replace(/[^\d]/g, '');
+    const amount = parseInt(amountStr) || 50000;
+    const cat = document.getElementById('inp-category').value;
+    const date = '08/10/2026';
+
+    const catMeta = {
+      food: { icon: '☕', color: '#ef4444' },
+      groceries: { icon: '🛒', color: '#10b981' },
+      study: { icon: '📚', color: '#3b82f6' },
+      travel: { icon: '🚗', color: '#f59e0b' },
+      gear: { icon: '💻', color: '#8b5cf6' },
+      entertainment: { icon: '🎬', color: '#ec4899' },
+      other: { icon: '🧾', color: '#6b7280' },
+    }[cat];
+
+    receipts.unshift({
+      id: Date.now(),
+      merchant,
+      amount,
+      date,
+      cat,
+      icon: catMeta.icon,
+      color: catMeta.color
+    });
+
+    switchScreen('screen-dashboard');
+  }
+
+  function renderDashboard() {
+    const total = receipts.reduce((sum, r) => sum + r.amount, 0);
+    document.getElementById('dash-total').innerText = total.toLocaleString('vi-VN') + ' ₫';
+
+    const list = document.getElementById('recent-receipts-list');
+    list.innerHTML = receipts.slice(0, 5).map(r => `
+      <div class="receipt-item">
+        <div class="receipt-icon" style="background:${r.color}20;color:${r.color}">${r.icon}</div>
+        <div class="receipt-info">
+          <div class="receipt-store">${r.merchant}</div>
+          <div class="receipt-meta">${r.cat.toUpperCase()} • ${r.date}</div>
+        </div>
+        <div class="receipt-price">${r.amount.toLocaleString('vi-VN')} ₫</div>
+      </div>
+    `).join('');
+  }
+
+  // Pure Canvas CustomPainter Implementation in Javascript
+  function renderCharts() {
+    drawBarChart('weeklyBarCanvas');
+    drawBarChart('analyticsBarCanvas');
+    drawDonutChart('categoryDonutCanvas');
+  }
+
+  function drawBarChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const values = [75000, 150000, 42000, 78000, 220000, 185000, 94000];
+    const maxVal = 250000;
+    const avgVal = values.reduce((a,b)=>a+b,0) / values.length;
+
+    const left = 45, bottom = 30, top = 20, right = 15;
+    const chartW = w - left - right;
+    const chartH = h - top - bottom;
+
+    // Grid lines
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = top + chartH * (1 - i/4);
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(w - right, y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'right';
+      ctx.fillText((maxVal * i / 4 / 1000) + 'k', left - 6, y + 3);
+    }
+
+    // Dashed average line
+    const avgY = top + chartH * (1 - avgVal / maxVal);
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#d97706';
+    ctx.beginPath();
+    ctx.moveTo(left, avgY);
+    ctx.lineTo(w - right, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#b45309';
+    ctx.font = 'bold 9px Inter';
+    ctx.fillText('Avg ' + Math.round(avgVal/1000) + 'k', w - right - 2, avgY - 4);
+
+    // Bars
+    const slotW = chartW / days.length;
+    const barW = slotW * 0.55;
+
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH;
+      const x = left + i * slotW + (slotW - barW) / 2;
+      const y = top + chartH - barH;
+
+      const grad = ctx.createLinearGradient(0, y, 0, y + barH);
+      grad.addColorStop(0, '#3b82f6');
+      grad.addColorStop(1, '#60a5fa');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(days[i], x + barW/2, h - 10);
+    });
+  }
+
+  function drawDonutChart(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const categories = [
+      { name: 'Food', amount: 94000, color: '#ef4444' },
+      { name: 'Groceries', amount: 42000, color: '#10b981' },
+      { name: 'Study', amount: 185000, color: '#3b82f6' },
+      { name: 'Travel', amount: 78000, color: '#f59e0b' },
+      { name: 'Gear', amount: 250000, color: '#8b5cf6' },
+      { name: 'Entertainment', amount: 220000, color: '#ec4899' },
+    ];
+    const total = categories.reduce((sum, c) => sum + c.amount, 0);
+
+    const cx = w / 2;
+    const cy = h / 2 - 10;
+    const radius = 80;
+    const innerRadius = 52;
+    let startAngle = -Math.PI / 2;
+
+    categories.forEach((cat, idx) => {
+      const sweep = (cat.amount / total) * 2 * Math.PI;
+      const gap = 0.03;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, startAngle + gap/2, startAngle + sweep - gap/2);
+      ctx.arc(cx, cy, innerRadius, startAngle + sweep - gap/2, startAngle + gap/2, true);
+      ctx.closePath();
+      ctx.fillStyle = cat.color;
+      ctx.fill();
+
+      startAngle += sweep;
+    });
+
+    // Center Text
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Total Expense', cx, cy - 6);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 15px Inter';
+    ctx.fillText(Math.round(total/1000) + 'k ₫', cx, cy + 14);
+
+    // Legend
+    const legend = document.getElementById('donut-legend');
+    legend.innerHTML = categories.map(c => `
+      <div style="display:flex;align-items:center;gap:4px;font-size:11px;background:#f1f5f9;padding:4px 8px;border-radius:12px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c.color}"></span>
+        <span>${c.name} (${Math.round(c.amount/total*100)}%)</span>
+      </div>
+    `).join('');
+  }
+
+  // Initialize
+  renderDashboard();
+  renderCharts();
+</script>
+</body>
+</html>
