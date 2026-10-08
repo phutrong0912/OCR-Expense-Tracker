@@ -124,3 +124,4 @@ void main() {
 
   print('\n=== All Model & Serialization Tests Passed! ($passed/$passed) ===');
 }
+

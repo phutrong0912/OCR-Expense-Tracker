@@ -44,3 +44,4 @@ jobs:
         with:
           name: ocr-expense-tracker-apk
           path: build/app/outputs/flutter-apk/*.apk
+

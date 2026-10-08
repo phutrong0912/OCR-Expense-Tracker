@@ -56,3 +56,4 @@ class OcrScanResult {
     return sum / confidenceScores.length;
   }
 }
+

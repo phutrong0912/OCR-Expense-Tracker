@@ -368,3 +368,4 @@ class _DonutChartPainter extends CustomPainter {
         oldDelegate.data != data;
   }
 }
+

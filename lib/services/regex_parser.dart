@@ -489,3 +489,4 @@ class _AmountResult {
   final double confidence;
   const _AmountResult(this.value, this.currency, this.confidence);
 }
+

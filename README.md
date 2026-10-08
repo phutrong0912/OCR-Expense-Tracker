@@ -271,3 +271,4 @@ dart run test/run_all_tests.dart
 
 ## 📄 License
 This project is open-source under the MIT License. Developed for Mini-Project 3: OCR Expense Tracker & Receipt Parser.
+

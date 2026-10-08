@@ -48,7 +48,7 @@ class OcrExpenseTrackerApp extends StatelessWidget {
             color: Color(0xFF0F172A),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -62,3 +62,4 @@ class OcrExpenseTrackerApp extends StatelessWidget {
     );
   }
 }
+

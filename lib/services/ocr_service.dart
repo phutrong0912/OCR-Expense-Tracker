@@ -156,3 +156,4 @@ TỔNG CỘNG: 315.000 VND
     _textRecognizer?.close();
   }
 }
+

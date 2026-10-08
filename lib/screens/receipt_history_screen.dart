@@ -329,3 +329,4 @@ class _ReceiptHistoryScreenState extends State<ReceiptHistoryScreen> {
     );
   }
 }
+

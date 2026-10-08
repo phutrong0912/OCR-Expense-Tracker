@@ -407,3 +407,4 @@ class _BarChartPainter extends CustomPainter {
         oldDelegate.data != data;
   }
 }
+
