@@ -47,21 +47,6 @@ University students and club treasurers frequently handle physical supermarket r
 3. **Mandatory Review & Verification Screen** where users manually inspect bounding lines and correct noisy optical mistakes before committing records to SQLite.
 4. **Pure Canvas Visualizations** (`CustomPainter`) delivering smooth 60fps animations and touch-to-explode interaction.
 
----
-
-## 📋 Core Functional Specifications Checklist
-
-| # | Specification | Status | Implementation Details |
-|---|---|:---:|---|
-| **1** | **Camera Capture & Image Cropping** | ✅ PASS | Live camera viewfinder with flash toggle (Off/Auto/Torch), tap-to-focus indicator, and darkened framing crop overlay with high-contrast targeting L-brackets (`CameraViewfinder`). |
-| **2** | **On-Device Text Recognition** | ✅ PASS | Integrates `google_mlkit_text_recognition` for offline, sub-100ms text extraction (zero cloud cost, 100% offline). |
-| **3** | **Custom Heuristic Regex Engine** | ✅ PASS | Multi-pass regex engine parsing totals (`150.000 đ`, `150,000 VND`, `45k`, `$10.53`), dates (`DD/MM/YYYY`, `YYYY-MM-DD`, textual), merchant dictionary matching, and category auto-classification. |
-| **4** | **Review & Verification Screen** | ✅ PASS | **Key Requirement**: Tabbed interface with raw OCR spatial bounding lines inspection, suggestion chips, currency switch, category pills, itemized lines, and atomic save. |
-| **5** | **Local Database Lifecycle** | ✅ PASS | SQLite (`sqflite`) relational database with `receipts` and `receipt_items` tables, `ON DELETE CASCADE`, indexed queries, and category aggregations. |
-| **6** | **Receipt Thumbnail Caching** | ✅ PASS | Application documents storage caching for high-res captured photos and downscaled thumbnails (`StorageService`). |
-| **7** | **Custom Canvas Visualizations** | ✅ PASS | **Zero 3rd party chart libraries**: Animated category Donut chart with touch-to-explode slice physics and animated weekly spending Bar chart with dashed average reference line via `CustomPainter`. |
-
----
 
 
 ## 🧠 Regex Heuristic Parser Engine (`lib/services/regex_parser.dart`)
@@ -85,28 +70,8 @@ The OCR output from physical receipts is often optical noise. The parser uses mu
 * Pre-loaded retail dictionary of 50+ popular chains: *Highlands Coffee, Phúc Long, The Coffee House, Circle K, 7-Eleven, FamilyMart, WinMart, Co.opmart, Fahasa, CGV, Grab, Thế Giới Di Động, etc.*
 * Boundary-isolated regex keyword matching prevents false substrings (e.g. `vé xem phim` correctly isolates to Entertainment rather than matching `vé xe` under Travel).
 
----
 
-## 🎨 Pure Canvas CustomPainter Visualizations
 
-In strict compliance with requirements, **no external charting packages (such as fl_chart or syncfusion) were used**.
-
-### 1. Animated Category Donut Chart (`AnimatedDonutChart`)
-* **Sweep Angle Formula**:
-  $$\text{sweep}_i = \left(\frac{\text{percentage}_i}{100}\right) \cdot 2\pi \cdot \text{progress}$$
-* **Slice Explosion Physics**:
-  When a slice is tapped, its center translates along its angular bisector $\phi = \text{startAngle} + \frac{\text{sweep}_i}{2}$:
-  $$\Delta x = \cos(\phi) \cdot 7.0\,\text{px}, \quad \Delta y = \sin(\phi) \cdot 7.0\,\text{px}$$
-* **Hit-Testing**:
-  Tapped coordinates $(x,y)$ compute $\theta = \text{atan2}(dy, dx) + \frac{\pi}{2}$; maps angle directly to slice index in $\mathcal{O}(N)$ time.
-
-### 2. Animated Weekly Spending Bar Chart (`AnimatedBarChart`)
-* **Dynamic Nice Max**: Computes nice scale intervals based on order of magnitude powers of 10.
-* **Dashed Reference Line**: Computes 7-day average spending and draws a dashed reference line:
-  $$\text{dash} = 5.0\,\text{px}, \quad \text{gap} = 4.0\,\text{px}$$
-* **Interactive Tooltip Pill**: Touch drag or tap renders a high-contrast floating tooltip with day name and exact monetary total.
-
----
 
 ## 🗄️ Database Schema (SQLite)
 
