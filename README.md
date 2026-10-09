@@ -117,7 +117,7 @@ CREATE INDEX idx_receipts_category ON receipts (category_id);
 ### Steps
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/user/ocr_expense_tracker.git
+   git clone https://github.com/phutrong0912/OCR-Expense-Tracker
    cd "ocr_expense_tracker"
    ```
 
